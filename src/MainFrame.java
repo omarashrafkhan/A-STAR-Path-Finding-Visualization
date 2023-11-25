@@ -1,6 +1,12 @@
 import javax.swing.JFrame;
+import java.awt.*;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 
-public class MainFrame extends JFrame {
+public class MainFrame extends JFrame  {
+
+
 
     public MainFrame() {
         // Set the title of the frame
@@ -11,6 +17,7 @@ public class MainFrame extends JFrame {
 
         // Set the default close operation
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+//        setExtendedState(JFrame.MAXIMIZED_BOTH);
 
         // Create an instance of the PathPanel class and add it to the frame
         PathPanel pathPanel = new PathPanel();
@@ -26,4 +33,5 @@ public class MainFrame extends JFrame {
         // Create an instance of the MainFrame class
         new MainFrame();
     }
+
 }

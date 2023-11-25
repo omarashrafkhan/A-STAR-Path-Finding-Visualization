@@ -1,44 +1,314 @@
-import javax.swing.JPanel;
-import java.awt.Color;
-import java.awt.Graphics;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.List;
+import java.util.*;
 
-public class PathPanel extends JPanel {
 
-    // You can add variables and methods related to path visualization here
+// make sure to implement the cost setting of the nodes properly
+
+public class PathPanel extends JPanel implements MouseListener, MouseMotionListener, KeyListener {
+
+    private final PriorityQueue<Node> openSet = new PriorityQueue<>(Comparator.comparingInt(Node::getF));
+    private final Set<Node> closedSet = new HashSet<>();
+    private final Map<Node, Node> cameFrom = new HashMap<>();
+    int size;
+    ArrayList<Node> wall = new ArrayList<>();
+    Node startNode, endNode;
+    char currentKey = (char) 0;
+    JButton start;
+
+
+    public PathPanel() {
+        size = 30;
+        addMouseListener(this);
+        addMouseMotionListener(this);
+        setFocusable(true);
+        setFocusTraversalKeysEnabled(false);
+        addKeyListener(this);
+        start = new JButton("Start");
+
+        add(start);
+
+
+        start.addActionListener(e -> {
+            try {
+                if (startNode != null && endNode != null)
+                    pathFind();
+            } catch (InterruptedException ex) {
+                throw new RuntimeException(ex);
+            }
+        });
+
+
+    }
+
 
     @Override
     protected void paintComponent(Graphics g) {
-
-        final int ROWS = 10;
-        final int COLS = 10;
         super.paintComponent(g);
 
-        int width = getWidth();
-        int height = getHeight();
-
-        // Calculate the width and height of each cell in the grid
-        int cellWidth = width / COLS;
-        int cellHeight = height / ROWS;
-
-        // Draw light grey grid lines
-        g.setColor(Color.LIGHT_GRAY);
-
-        // Draw horizontal lines
-        for (int row = 0; row < ROWS; row++) {
-            int y = row * cellHeight;
-            g.drawLine(0, y, width, y);
+        g.setColor(Color.lightGray);
+        for (int j = 0; j < this.getHeight(); j += size) {
+            for (int i = 0; i < this.getWidth(); i += size) {
+                g.drawRect(i, j, size, size);
+            }
         }
 
-        // Draw vertical lines
-        for (int col = 0; col < COLS; col++) {
-            int x = col * cellWidth;
-            g.drawLine(x, 0, x, height);
+        g.setColor(Color.black);
+        for (Node value : wall) {
+            g.fillRect(value.getX() + 1, value.getY() + 1,
+                    size - 1, size - 1);
         }
 
-        // Example: Drawing a red rectangle in the grid cell (2, 2)
-        g.setColor(Color.RED);
-        int cellX = 2 * cellWidth;
-        int cellY = 2 * cellHeight;
-        g.fillRect(cellX, cellY, cellWidth, cellHeight);
+        // Draw the start node in blue
+        if (startNode != null) {
+            g.setColor(Color.blue);
+            g.fillRect(startNode.getX() + 1, startNode.getY() + 1, size - 1, size - 1);
+        }
+
+        // Draw the end node in red
+        if (endNode != null) {
+            g.setColor(Color.red);
+            g.fillRect(endNode.getX() + 1, endNode.getY() + 1, size - 1, size - 1);
+        }
+
+        // Draw nodes in the openSet in green
+        g.setColor(Color.green);
+        for (Node node : openSet) {
+            g.fillRect(node.getX() + 1, node.getY() + 1, size - 1, size - 1);
+        }
+
+        // Draw nodes in the closedSet in yellow
+        g.setColor(Color.yellow);
+        for (Node node : closedSet) {
+            g.fillRect(node.getX() + 1, node.getY() + 1, size - 1, size - 1);
+        }
+
+
     }
+
+
+    private void reconstructPath() {
+        List<Node> path = new ArrayList<>();
+        Node current = endNode;
+
+        while (current != null) {
+            path.add(current);
+            current = cameFrom.get(current);
+        }
+
+        Collections.reverse(path);
+        // Use the 'path' list as needed
+    }
+
+
+    public int dist(Node a, Node b) {
+        return (int) Point.distance(a.getX(), a.getY(), b.getX(), b.getY());
+    }
+
+
+    public void pathFind() throws InterruptedException {
+        if (endNode == null) {
+            System.out.println("End node is not set.");
+            return;
+        }
+
+        openSet.add(startNode);
+
+        while (!openSet.isEmpty()) {
+
+            Node curr = openSet.poll();
+
+            closedSet.add(curr);
+
+            if (curr.getX() == endNode.getX() && curr.getY() == endNode.getY()) {
+                System.out.println("Path found");
+                reconstructPath(); // Implement path reconstruction
+                return;
+            }
+
+
+            List<Node> neighbors = findNodes(curr);
+
+            System.out.println(wall.size());
+
+            for (Node neighbor : neighbors) {
+                if (isInClosed(neighbor, closedSet) || isInWall(neighbor, wall)) {
+
+                    continue; // Skip if the neighbor is in the closed set or is a wall
+                }
+
+                int tentativeG = (int) Point.distance(curr.getX(), curr.getY(), neighbor.getX(), neighbor.getY());
+
+                if (!openSet.contains(neighbor) || tentativeG < neighbor.getG()) {
+                    neighbor.setG(tentativeG);
+                    neighbor.setH(dist(neighbor, endNode));
+                    neighbor.setF(neighbor.getG() + neighbor.getH());
+                    cameFrom.put(neighbor, curr);
+
+                    if (!openSet.contains(neighbor)) {
+                        openSet.add(neighbor);
+                    }
+                }
+
+                repaint(); // Redraw the grid
+            }
+
+        }
+    }
+
+
+    public boolean isInClosed(Node node, Set<Node> nodes) {
+        for (Node n : nodes) {
+            if (n.compareTo(node) == 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    public boolean isInWall(Node node, ArrayList<Node> nodes) {
+        for (Node n : nodes) {
+            if (n.compareTo(node) == 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public List<Node> findNodes(Node center) {
+        List<Node> neighbors = new ArrayList<>();
+
+        neighbors.add(new Node(center.getX() + size, center.getY()));
+        neighbors.add(new Node(center.getX() - size, center.getY()));
+        neighbors.add(new Node(center.getX(), center.getY() + size));
+        neighbors.add(new Node(center.getX(), center.getY() - size));
+        neighbors.add(new Node(center.getX() + size, center.getY() + size));
+        neighbors.add(new Node(center.getX() - size, center.getY() - size));
+        neighbors.add(new Node(center.getX() + size, center.getY() - size));
+        neighbors.add(new Node(center.getX() - size, center.getY() + size));
+
+        return neighbors;
+    }
+
+    public Node getNode(int x, int y) {
+        for (Node node : openSet) {
+            if (node.getX() == x && node.getY() == y) {
+                return node;
+            }
+        }
+        for (Node node : closedSet) {
+            if (node.getX() == x && node.getY() == y) {
+                return node;
+            }
+        }
+        return new Node(x, y);
+    }
+
+
+    public void createWall(MouseEvent e) {
+        if (SwingUtilities.isLeftMouseButton(e) && currentKey != 's' && currentKey != 'e') {
+            int xBorder = e.getX() - (e.getX() % size);
+            int yBorder = e.getY() - (e.getY() % size);
+
+            Node newBorder = new Node(xBorder, yBorder);
+            wall.add(newBorder);
+
+            repaint();
+        }
+    }
+
+
+    @Override
+    public void mouseClicked(MouseEvent e) {
+        if (SwingUtilities.isLeftMouseButton(e)) {
+            createWall(e);
+        }
+
+
+        if (currentKey == 's') {
+            int xRollover = e.getX() % size;
+            int yRollover = e.getY() % size;
+
+            if (startNode == null) {
+                startNode = new Node(e.getX() - xRollover, e.getY() - yRollover);
+
+
+            } else {
+                startNode.setXY(e.getX() - xRollover, e.getY() - yRollover);
+            }
+            repaint();
+        }
+        // If 'e' is pressed create end node
+        else if (currentKey == 'e') {
+            int xRollover = e.getX() % size;
+            int yRollover = e.getY() % size;
+
+            if (endNode == null) {
+                endNode = new Node(e.getX() - xRollover, e.getY() - yRollover);
+            } else {
+                endNode.setXY(e.getX() - xRollover, e.getY() - yRollover);
+            }
+            repaint();
+        }
+
+
+    }
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
+
+    }
+
+    @Override
+    public void mouseExited(MouseEvent e) {
+
+    }
+
+    @Override
+    public void mouseDragged(MouseEvent e) {
+        if (SwingUtilities.isLeftMouseButton(e)) {
+            createWall(e);
+        }
+    }
+
+    @Override
+    public void mouseMoved(MouseEvent e) {
+
+    }
+
+
+    @Override
+    public void keyTyped(KeyEvent e) {
+        // TODO Auto-generated method stub
+    }
+
+
+    @Override
+    public void keyPressed(KeyEvent e) {
+        // TODO Auto-generated method stub
+        currentKey = e.getKeyChar();
+
+
+    }
+
+
+    @Override
+    public void keyReleased(KeyEvent e) {
+        currentKey = (char) 0;
+    }
+
+
 }
