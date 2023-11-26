@@ -4,9 +4,6 @@ import java.awt.event.*;
 import java.util.List;
 import java.util.*;
 
-
-// make sure to implement the cost setting of the nodes properly
-
 public class PathPanel extends JPanel implements MouseListener, MouseMotionListener, KeyListener {
 
     private final PriorityQueue<Node> openSet = new PriorityQueue<>(Comparator.comparingInt(Node::getF));
