@@ -17,6 +17,7 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
     Node startNode, endNode;
     char currentKey = (char) 0;
     JButton start;
+    List<Node> shortestPath;
 
 
     public PathPanel() {
@@ -62,16 +63,7 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
         }
 
         // Draw the start node in blue
-        if (startNode != null) {
-            g.setColor(Color.blue);
-            g.fillRect(startNode.getX() + 1, startNode.getY() + 1, size - 1, size - 1);
-        }
 
-        // Draw the end node in red
-        if (endNode != null) {
-            g.setColor(Color.red);
-            g.fillRect(endNode.getX() + 1, endNode.getY() + 1, size - 1, size - 1);
-        }
 
         // Draw nodes in the openSet in green
         g.setColor(Color.green);
@@ -86,20 +78,42 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
         }
 
 
+        // Draw the end node in red
+
+
+        if(shortestPath != null) {
+            g.setColor(Color.cyan);
+            for (Node node : shortestPath) {
+                g.fillRect(node.getX() + 1, node.getY() + 1, size - 1, size - 1);
+            }
+        }
+        if (endNode != null) {
+            g.setColor(Color.red);
+            g.fillRect(endNode.getX() + 1, endNode.getY() + 1, size - 1, size - 1);
+        }
+        if (startNode != null) {
+            g.setColor(Color.blue);
+            g.fillRect(startNode.getX() + 1, startNode.getY() + 1, size - 1, size - 1);
+        }
+
+
     }
 
 
     private void reconstructPath() {
-        List<Node> path = new ArrayList<>();
+
+
+        shortestPath = new ArrayList<>();
         Node current = endNode;
 
         while (current != null) {
-            path.add(current);
-            current = cameFrom.get(current);
-        }
+            System.out.println("here");
+            shortestPath.add(current);
 
-        Collections.reverse(path);
-        // Use the 'path' list as needed
+            current = cameFrom.get(current);
+            System.out.println(current);
+        }
+        Collections.reverse(shortestPath);
     }
 
 
@@ -124,6 +138,7 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
 
             if (curr.getX() == endNode.getX() && curr.getY() == endNode.getY()) {
                 System.out.println("Path found");
+                cameFrom.put(endNode, curr);
                 reconstructPath(); // Implement path reconstruction
                 return;
             }
@@ -131,7 +146,7 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
 
             List<Node> neighbors = findNodes(curr);
 
-            System.out.println(wall.size());
+
 
             for (Node neighbor : neighbors) {
                 if (isInClosed(neighbor, closedSet) || isInWall(neighbor, wall)) {
@@ -152,10 +167,14 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
                     }
                 }
 
-                repaint(); // Redraw the grid
+                repaint();
             }
 
         }
+
+
+
+
     }
 
 
