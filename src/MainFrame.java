@@ -29,6 +29,7 @@ public class MainFrame extends JFrame  {
         setVisible(true);
     }
 
+
     public static void main(String[] args) {
         // Create an instance of the MainFrame class
         new MainFrame();

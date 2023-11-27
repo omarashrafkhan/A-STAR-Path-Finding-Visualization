@@ -104,11 +104,10 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
         Node current = endNode;
 
         while (current != null) {
-            System.out.println("here");
             shortestPath.add(current);
 
             current = cameFrom.get(current);
-            System.out.println(current);
+
         }
         Collections.reverse(shortestPath);
     }
@@ -146,7 +145,7 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
 
 
             for (Node neighbor : neighbors) {
-                if (isInClosed(neighbor, closedSet) || isInWall(neighbor, wall)) {
+                if (isInClosed(neighbor) || isInWall(neighbor)  || isAtDiagonal(neighbor)) {
 
                     continue; // Skip if the neighbor is in the closed set or is a wall
                 }
@@ -175,8 +174,19 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
     }
 
 
-    public boolean isInClosed(Node node, Set<Node> nodes) {
-        for (Node n : nodes) {
+    public boolean isAtDiagonal(Node node ){
+        if(isInWall(new Node(node.getX() - size, node.getY() )) && isInWall(new Node(node.getX() , node.getY() + size)))
+            return true;
+        else if(isInWall(new Node(node.getX() - size, node.getY() )) && isInWall(new Node(node.getX() , node.getY() - size)))
+            return true;
+        else if(isInWall(new Node(node.getX() + size, node.getY() )) && isInWall(new Node(node.getX() , node.getY() + size)))
+            return true;
+        else return isInWall(new Node(node.getX() + size, node.getY())) && isInWall(new Node(node.getX(), node.getY() - size));
+
+    }
+
+    public boolean isInClosed(Node node) {
+        for (Node n : closedSet) {
             if (n.compareTo(node) == 0) {
                 return true;
             }
@@ -185,8 +195,8 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
     }
 
 
-    public boolean isInWall(Node node, ArrayList<Node> nodes) {
-        for (Node n : nodes) {
+    public boolean isInWall(Node node) {
+        for (Node n : wall) {
             if (n.compareTo(node) == 0) {
                 return true;
             }
