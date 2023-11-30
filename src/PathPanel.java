@@ -60,25 +60,27 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
 
 
         // Draw nodes in the openSet in green
-        if(algorithmRunning){
-            g.setColor(Color.green);
+        if (algorithmRunning) {
+                g.setColor(Color.green);
             for (Node node : openSet) {
                 g.fillRect(node.getX() + 1, node.getY() + 1, size - 1, size - 1);
+
             }
 
             // Draw nodes in the closedSet in yellow
-            g.setColor(Color.yellow);
+                g.setColor(Color.yellow);
             for (Node node : closedSet) {
                 g.fillRect(node.getX() + 1, node.getY() + 1, size - 1, size - 1);
             }
         }
 
 
+
+
         // Draw the end node in red
 
 
-
-        if(shortestPath != null) {
+        if (shortestPath != null) {
             g.setColor(Color.cyan);
             for (Node node : shortestPath) {
                 g.fillOval(node.getX() + 1, node.getY() + 1, size - 1, size - 1);
@@ -93,6 +95,23 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
             g.fillRect(startNode.getX() + 1, startNode.getY() + 1, size - 1, size - 1);
         }
 
+        for(Node node : openSet){
+            drawCost(node, g);
+        }
+
+        for(Node node : closedSet){
+            drawCost(node, g);
+        }
+
+
+    }
+
+
+    public void drawCost(Node node, Graphics g) {
+        g.setColor(Color.black);
+        //set text size
+        g.setFont(new Font("TimesRoman", Font.BOLD, 10));
+        g.drawString(String.valueOf(node.getF()), node.getX() +10, node.getY() +20);
 
     }
 
@@ -188,25 +207,30 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
             }
 
             repaint();
-            Thread.sleep(100); // Adjust the delay as needed
+//            Thread.sleep(100); // Adjust the delay as needed
         }
     }
 
 
-
-    public boolean inBounds(Node node ){
+    public boolean inBounds(Node node) {
         return node.getX() <= Toolkit.getDefaultToolkit().getScreenSize().width && node.getX() >= 0 && node.getY() <= Toolkit.getDefaultToolkit().getScreenSize().height && node.getY() >= 0;
     }
 
-    public boolean isAtDiagonal(Node node ){
-        if(isInWall(new Node(node.getX() - size, node.getY() )) && isInWall(new Node(node.getX() , node.getY() + size)))
+    public boolean isAtDiagonal(Node node) {
+        if (isInWall(new Node(node.getX() - size, node.getY())) && isInWall(new Node(node.getX(), node.getY() + size))) {
+            closedSet.add(node);
             return true;
-        else if(isInWall(new Node(node.getX() - size, node.getY() )) && isInWall(new Node(node.getX() , node.getY() - size)))
+        } else if (isInWall(new Node(node.getX() - size, node.getY())) && isInWall(new Node(node.getX(), node.getY() - size))) {
+            closedSet.add(node);
             return true;
-        else if(isInWall(new Node(node.getX() + size, node.getY() )) && isInWall(new Node(node.getX() , node.getY() + size)))
+        } else if (isInWall(new Node(node.getX() + size, node.getY())) && isInWall(new Node(node.getX(), node.getY() + size))) {
+            closedSet.add(node);
             return true;
-        else return isInWall(new Node(node.getX() + size, node.getY())) && isInWall(new Node(node.getX(), node.getY() - size));
-
+        } else if (isInWall(new Node(node.getX() + size, node.getY())) && isInWall(new Node(node.getX(), node.getY() - size))) {
+            closedSet.add(node);
+            return true;
+        }
+        return false;
     }
 
     public boolean isInClosed(Node node) {
