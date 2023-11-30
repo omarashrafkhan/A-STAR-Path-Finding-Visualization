@@ -16,9 +16,11 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
     JButton start;
     List<Node> shortestPath;
 
+    private boolean algorithmRunning = false;
+
 
     public PathPanel() {
-        size = 30;
+        size = 50;
         addMouseListener(this);
         addMouseMotionListener(this);
         setFocusable(true);
@@ -30,12 +32,7 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
 
 
         start.addActionListener(e -> {
-            try {
-                if (startNode != null && endNode != null)
-                    pathFind();
-            } catch (InterruptedException ex) {
-                throw new RuntimeException(ex);
-            }
+            startAlgorithm();
         });
 
 
@@ -63,25 +60,28 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
 
 
         // Draw nodes in the openSet in green
-        g.setColor(Color.green);
-        for (Node node : openSet) {
-            g.fillRect(node.getX() + 1, node.getY() + 1, size - 1, size - 1);
-        }
+        if(algorithmRunning){
+            g.setColor(Color.green);
+            for (Node node : openSet) {
+                g.fillRect(node.getX() + 1, node.getY() + 1, size - 1, size - 1);
+            }
 
-        // Draw nodes in the closedSet in yellow
-        g.setColor(Color.yellow);
-        for (Node node : closedSet) {
-            g.fillRect(node.getX() + 1, node.getY() + 1, size - 1, size - 1);
+            // Draw nodes in the closedSet in yellow
+            g.setColor(Color.yellow);
+            for (Node node : closedSet) {
+                g.fillRect(node.getX() + 1, node.getY() + 1, size - 1, size - 1);
+            }
         }
 
 
         // Draw the end node in red
 
 
+
         if(shortestPath != null) {
             g.setColor(Color.cyan);
             for (Node node : shortestPath) {
-                g.fillRect(node.getX() + 1, node.getY() + 1, size - 1, size - 1);
+                g.fillOval(node.getX() + 1, node.getY() + 1, size - 1, size - 1);
             }
         }
         if (endNode != null) {
@@ -96,6 +96,35 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
 
     }
 
+    private void updateGUI() {
+        repaint();
+    }
+
+
+    private void startAlgorithm() {
+        SwingWorker<Void, Void> pathfindingWorker = new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() {
+                algorithmRunning = true;
+                try {
+                    pathFind();
+                    reconstructPath();
+                } catch (InterruptedException ex) {
+                    throw new RuntimeException(ex);
+                }
+                return null;
+            }
+
+            @Override
+            protected void done() {
+//                algorithmRunning = false;
+                start.setText("Reset");
+                updateGUI();
+            }
+        };
+
+        pathfindingWorker.execute();
+    }
 
     private void reconstructPath() {
 
@@ -127,9 +156,7 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
         openSet.add(startNode);
 
         while (!openSet.isEmpty()) {
-
             Node curr = openSet.poll();
-
             closedSet.add(curr);
 
             if (curr.getX() == endNode.getX() && curr.getY() == endNode.getY()) {
@@ -139,14 +166,10 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
                 return;
             }
 
-
             List<Node> neighbors = findNodes(curr);
 
-
-
             for (Node neighbor : neighbors) {
-                if (isInClosed(neighbor) || isInWall(neighbor)  || isAtDiagonal(neighbor)) {
-
+                if (isInClosed(neighbor) || isInWall(neighbor) || isAtDiagonal(neighbor) || !inBounds(neighbor)) {
                     continue; // Skip if the neighbor is in the closed set or is a wall
                 }
 
@@ -162,17 +185,18 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
                         openSet.add(neighbor);
                     }
                 }
-
-                repaint();
             }
 
+            repaint();
+            Thread.sleep(100); // Adjust the delay as needed
         }
-
-
-
-
     }
 
+
+
+    public boolean inBounds(Node node ){
+        return node.getX() <= Toolkit.getDefaultToolkit().getScreenSize().width && node.getX() >= 0 && node.getY() <= Toolkit.getDefaultToolkit().getScreenSize().height && node.getY() >= 0;
+    }
 
     public boolean isAtDiagonal(Node node ){
         if(isInWall(new Node(node.getX() - size, node.getY() )) && isInWall(new Node(node.getX() , node.getY() + size)))

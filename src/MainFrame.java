@@ -1,8 +1,5 @@
-import javax.swing.JFrame;
-import java.awt.*;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
+import javax.swing.*;
+
 
 public class MainFrame extends JFrame  {
 
@@ -25,14 +22,16 @@ public class MainFrame extends JFrame  {
 
         // You can add other components or controls here if needed
 
-        // Set the frame to be visible
-        setVisible(true);
+
     }
 
 
     public static void main(String[] args) {
         // Create an instance of the MainFrame class
-        new MainFrame();
+        SwingUtilities.invokeLater(() -> {
+            new MainFrame().setVisible(true);
+
+        });
     }
 
 }
