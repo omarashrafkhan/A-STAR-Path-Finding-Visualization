@@ -6,38 +6,83 @@ import java.util.*;
 
 public class PathPanel extends JPanel implements MouseListener, MouseMotionListener, KeyListener {
 
-    private final PriorityQueue<Node> openSet = new PriorityQueue<>(Comparator.comparingInt(Node::getF));
-    private final Set<Node> closedSet = new HashSet<>();
-    private final Map<Node, Node> cameFrom = new HashMap<>();
+    private final PriorityQueue<Node> openSet;
+    private final Set<Node> closedSet;
+    private final Map<Node, Node> cameFrom;
     int size;
-    ArrayList<Node> wall = new ArrayList<>();
+    ArrayList<Node> wall;
     Node startNode, endNode;
     char currentKey = (char) 0;
-    JButton start;
+    JButton start, reset;
     List<Node> shortestPath;
-
+    JButton stopContinue; // New button for stopping/continuing the process
     private boolean algorithmRunning = false;
+    private boolean paused = false;
 
 
     public PathPanel() {
-        size = 50;
+        size = 32;
         addMouseListener(this);
         addMouseMotionListener(this);
         setFocusable(true);
         setFocusTraversalKeysEnabled(false);
         addKeyListener(this);
         start = new JButton("Start");
+        reset = new JButton("Reset");
+        stopContinue = new JButton("Stop");
+
 
         add(start);
+        add(reset);
+        add(stopContinue);
+
+        stopContinue.addActionListener(e -> {
+            togglePause(); // Toggle the paused state on button click
+
+            if (paused) {
+                stopContinue.setText("Continue");
+            } else {
+                stopContinue.setText("Stop");
+            }
+        });
+
+        openSet = new PriorityQueue<>(Comparator.comparingInt(Node::getF));
+        closedSet = new HashSet<>();
+        cameFrom = new HashMap<>();
+        wall = new ArrayList<>();
 
 
         start.addActionListener(e -> {
             startAlgorithm();
         });
 
+        reset.addActionListener(e -> {
+
+            reset();
+
+        });
+
 
     }
 
+    public void reset() {
+        startNode = null;
+        endNode = null;
+        wall.clear();
+        openSet.clear();
+        closedSet.clear();
+        cameFrom.clear();
+        shortestPath = null;
+
+        paused = false;
+        repaint();
+        requestFocus();
+    }
+
+
+    private void togglePause() {
+        paused = !paused;
+    }
 
     @Override
     protected void paintComponent(Graphics g) {
@@ -61,20 +106,18 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
 
         // Draw nodes in the openSet in green
         if (algorithmRunning) {
-                g.setColor(Color.green);
+            g.setColor(Color.green);
             for (Node node : openSet) {
                 g.fillRect(node.getX() + 1, node.getY() + 1, size - 1, size - 1);
 
             }
 
             // Draw nodes in the closedSet in yellow
-                g.setColor(Color.yellow);
+            g.setColor(Color.yellow);
             for (Node node : closedSet) {
                 g.fillRect(node.getX() + 1, node.getY() + 1, size - 1, size - 1);
             }
         }
-
-
 
 
         // Draw the end node in red
@@ -95,11 +138,14 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
             g.fillRect(startNode.getX() + 1, startNode.getY() + 1, size - 1, size - 1);
         }
 
-        for(Node node : openSet){
-            drawCost(node, g);
+        Set<Node> copyOfOpenSet = new HashSet<>(openSet);
+
+        for (Node node : copyOfOpenSet) {
+            drawCost(node, g); // Assuming you have a Graphics object
         }
 
-        for(Node node : closedSet){
+        copyOfOpenSet = new HashSet<>(closedSet);
+        for (Node node : copyOfOpenSet) {
             drawCost(node, g);
         }
 
@@ -111,7 +157,7 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
         g.setColor(Color.black);
         //set text size
         g.setFont(new Font("TimesRoman", Font.BOLD, 10));
-        g.drawString(String.valueOf(node.getF()), node.getX() +10, node.getY() +20);
+        g.drawString(String.valueOf(node.getF()), node.getX() + 10, node.getY() + 20);
 
     }
 
@@ -137,7 +183,7 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
             @Override
             protected void done() {
 //                algorithmRunning = false;
-                start.setText("Reset");
+//                start.setText("Reset");
                 updateGUI();
             }
         };
@@ -178,9 +224,9 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
             Node curr = openSet.poll();
             closedSet.add(curr);
 
-            if (curr.getX() == endNode.getX() && curr.getY() == endNode.getY()) {
+            if (curr.equals(endNode)) {
                 System.out.println("Path found");
-                cameFrom.put(endNode, curr);
+//                cameFrom.put(endNode, curr);
                 reconstructPath(); // Implement path reconstruction
                 return;
             }
@@ -188,16 +234,17 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
             List<Node> neighbors = findNodes(curr);
 
             for (Node neighbor : neighbors) {
-                if (isInClosed(neighbor) || isInWall(neighbor) || isAtDiagonal(neighbor) || !inBounds(neighbor)) {
-                    continue; // Skip if the neighbor is in the closed set or is a wall
+                if (isInClosed(neighbor) || isInWall(neighbor) || isAtDiagonal(neighbor, curr) || !inBounds(neighbor)) {
+                    continue;
                 }
+
 
                 int tentativeG = (int) Point.distance(curr.getX(), curr.getY(), neighbor.getX(), neighbor.getY());
 
                 if (!openSet.contains(neighbor) || tentativeG < neighbor.getG()) {
                     neighbor.setG(tentativeG);
                     neighbor.setH(dist(neighbor, endNode));
-                    neighbor.setF(neighbor.getG() + neighbor.getH());
+                    neighbor.setF(Math.abs(neighbor.getG()) + Math.abs(neighbor.getH()));
                     cameFrom.put(neighbor, curr);
 
                     if (!openSet.contains(neighbor)) {
@@ -207,23 +254,28 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
             }
 
             repaint();
-//            Thread.sleep(100); // Adjust the delay as needed
+
+            while (paused) {
+                Thread.sleep(100);
+            }
+
+            Thread.sleep(300); // Adjust the delay as needed
         }
     }
 
 
     public boolean inBounds(Node node) {
-        return node.getX() <= Toolkit.getDefaultToolkit().getScreenSize().width && node.getX() >= 0 && node.getY() <= Toolkit.getDefaultToolkit().getScreenSize().height && node.getY() >= 0;
+        return node.getX() + size <= Toolkit.getDefaultToolkit().getScreenSize().width && node.getX() >= 0 && node.getY() + size <= Toolkit.getDefaultToolkit().getScreenSize().height && node.getY() >= 0;
     }
 
-    public boolean isAtDiagonal(Node node) {
+    public boolean isAtDiagonal(Node node, Node curr) {
         if (isInWall(new Node(node.getX() - size, node.getY())) && isInWall(new Node(node.getX(), node.getY() + size))) {
             closedSet.add(node);
             return true;
         } else if (isInWall(new Node(node.getX() - size, node.getY())) && isInWall(new Node(node.getX(), node.getY() - size))) {
             closedSet.add(node);
             return true;
-        } else if (isInWall(new Node(node.getX() + size, node.getY())) && isInWall(new Node(node.getX(), node.getY() + size))) {
+        } else if (!(node.getX()>curr.getX()&&node.getY()>curr.getY())&&isInWall(new Node(node.getX() + size, node.getY())) && isInWall(new Node(node.getX(), node.getY() + size))) {
             closedSet.add(node);
             return true;
         } else if (isInWall(new Node(node.getX() + size, node.getY())) && isInWall(new Node(node.getX(), node.getY() - size))) {
@@ -303,6 +355,7 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
 
 
         if (currentKey == 's') {
+
             int xRollover = e.getX() % size;
             int yRollover = e.getY() % size;
 
@@ -373,8 +426,9 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
     @Override
     public void keyPressed(KeyEvent e) {
         // TODO Auto-generated method stub
-        currentKey = e.getKeyChar();
 
+
+        currentKey = e.getKeyChar();
 
     }
 
