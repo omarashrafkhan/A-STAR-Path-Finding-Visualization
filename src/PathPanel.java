@@ -6,15 +6,25 @@ import java.util.*;
 
 public class PathPanel extends JPanel implements MouseListener, MouseMotionListener, KeyListener {
 
+    private static final char START_NODE_KEY = 's';
+    private static final char END_NODE_KEY = 'e';
+    private static final Color GRID_COLOR = Color.lightGray;
+    private static final Color WALL_COLOR = Color.black;
+    private static final Color OPEN_SET_COLOR = Color.green;
+    private static final Color CLOSED_SET_COLOR = Color.yellow;
+    private static final Color PATH_COLOR = Color.cyan;
+    private static final Color END_NODE_COLOR = Color.red;
+    private static final Color START_NODE_COLOR = Color.blue;
+    private static final Color COST_COLOR = Color.black;
     private final PriorityQueue<Node> openSet;
     private final Set<Node> closedSet;
     private final Map<Node, Node> cameFrom;
-    int size;
-    ArrayList<Node> wall;
+    int size; //size of the squares being printed
+    ArrayList<Node> wall; //wall for obstacles
     Node startNode, endNode;
-    char currentKey = (char) 0;
+    char currentKey = (char) 0; //used to define start and end nodes
     JButton start, reset;
-    List<Node> shortestPath;
+    List<Node> shortestPath; //final shortest path being drawn
     JButton stopContinue; // New button for stopping/continuing the process
     private boolean algorithmRunning = false;
     private boolean paused = false;
@@ -88,78 +98,103 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
 
-        g.setColor(Color.lightGray);
+        Graphics2D g2d = (Graphics2D) g;
+
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        //grid being drawn
+        drawGrid(g);
+
+        //wall being drawn
+        drawWalls(g);
+
+
+        drawNodes(g);
+
+        Set<Node> copyOfOpenSet = new HashSet<>(openSet);
+
+        for (Node node : copyOfOpenSet) {
+            drawNodeDetails(node, g); // Assuming you have a Graphics object
+        }
+
+        copyOfOpenSet = new HashSet<>(closedSet);
+        for (Node node : copyOfOpenSet) {
+            drawNodeDetails(node, g);
+        }
+
+
+    }
+
+
+    private void drawGrid(Graphics g) {
+        g.setColor(GRID_COLOR);
         for (int j = 0; j < this.getHeight(); j += size) {
             for (int i = 0; i < this.getWidth(); i += size) {
                 g.drawRect(i, j, size, size);
             }
         }
+    }
 
-        g.setColor(Color.black);
+    private void drawWalls(Graphics g) {
+        g.setColor(WALL_COLOR);
         for (Node value : wall) {
-            g.fillRect(value.getX() + 1, value.getY() + 1,
-                    size - 1, size - 1);
+            g.fillRect(value.getX() + 1, value.getY() + 1, size - 1, size - 1);
         }
+    }
 
-        // Draw the start node in blue
-
-
-        // Draw nodes in the openSet in green
+    private void drawNodes(Graphics g) {
         if (algorithmRunning) {
-            g.setColor(Color.green);
-            for (Node node : openSet) {
-                g.fillRect(node.getX() + 1, node.getY() + 1, size - 1, size - 1);
-
-            }
-
-            // Draw nodes in the closedSet in yellow
-            g.setColor(Color.yellow);
-            for (Node node : closedSet) {
-                g.fillRect(node.getX() + 1, node.getY() + 1, size - 1, size - 1);
-            }
+            drawOpenSet(g);
+            drawClosedSet(g);
         }
+        drawShortestPath(g);
+        drawEndNode(g);
+        drawStartNode(g);
+    }
 
+    private void drawOpenSet(Graphics g) {
+        g.setColor(OPEN_SET_COLOR);
+        for (Node node : openSet) {
+            g.fillRect(node.getX() + 1, node.getY() + 1, size - 1, size - 1);
+        }
+    }
 
-        // Draw the end node in red
+    private void drawClosedSet(Graphics g) {
+        g.setColor(CLOSED_SET_COLOR);
+        for (Node node : closedSet) {
+            g.fillRect(node.getX() + 1, node.getY() + 1, size - 1, size - 1);
+        }
+    }
 
-
+    private void drawShortestPath(Graphics g) {
         if (shortestPath != null) {
-            g.setColor(Color.cyan);
+            g.setColor(PATH_COLOR);
             for (Node node : shortestPath) {
                 g.fillOval(node.getX() + 1, node.getY() + 1, size - 1, size - 1);
             }
         }
+    }
+
+    private void drawEndNode(Graphics g) {
         if (endNode != null) {
-            g.setColor(Color.red);
+            g.setColor(END_NODE_COLOR);
             g.fillRect(endNode.getX() + 1, endNode.getY() + 1, size - 1, size - 1);
         }
+    }
+
+    private void drawStartNode(Graphics g) {
         if (startNode != null) {
-            g.setColor(Color.blue);
+            g.setColor(START_NODE_COLOR);
             g.fillRect(startNode.getX() + 1, startNode.getY() + 1, size - 1, size - 1);
         }
-
-        Set<Node> copyOfOpenSet = new HashSet<>(openSet);
-
-        for (Node node : copyOfOpenSet) {
-            drawCost(node, g); // Assuming you have a Graphics object
-        }
-
-        copyOfOpenSet = new HashSet<>(closedSet);
-        for (Node node : copyOfOpenSet) {
-            drawCost(node, g);
-        }
-
-
     }
 
-
-    public void drawCost(Node node, Graphics g) {
-        g.setColor(Color.black);
-        //set text size
+    private void drawNodeDetails(Node node, Graphics g) {
+        g.setColor(COST_COLOR);
         g.setFont(new Font("TimesRoman", Font.BOLD, 10));
-        g.drawString(String.valueOf(node.getF()), node.getX() + 10, node.getY() + 20);
-
+        g.drawString(String.valueOf(node.getF()), node.getX() + 10, node.getY() + 25);
     }
+
 
     private void updateGUI() {
         repaint();
@@ -226,7 +261,6 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
 
             if (curr.equals(endNode)) {
                 System.out.println("Path found");
-//                cameFrom.put(endNode, curr);
                 reconstructPath(); // Implement path reconstruction
                 return;
             }
@@ -239,18 +273,32 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
                 }
 
 
-                int tentativeG = (int) Point.distance(curr.getX(), curr.getY(), neighbor.getX(), neighbor.getY());
+                int GxMoveCost = neighbor.getX() - curr.getX();
+                int GyMoveCost = neighbor.getY() - curr.getY();
+                int gCost = curr.getG();
 
-                if (!openSet.contains(neighbor) || tentativeG < neighbor.getG()) {
-                    neighbor.setG(tentativeG);
-                    neighbor.setH(dist(neighbor, endNode));
-                    neighbor.setF(Math.abs(neighbor.getG()) + Math.abs(neighbor.getH()));
+                if (GxMoveCost != 0 && GyMoveCost != 0) {
+                    gCost += (int) (Math.sqrt(2 * (Math.pow(size, 2))));
+                } else {
+                    gCost += size;
+                }
+
+                if (!openSet.contains(neighbor) || gCost < neighbor.getG()) {
+                    neighbor.setG(gCost);
+
+                    int HxDiff = Math.abs(endNode.getX() - neighbor.getX());
+                    int HyDiff = Math.abs(endNode.getY() - neighbor.getY());
+                    int hCost = HxDiff + HyDiff;
+
+                    neighbor.setH(hCost);
+                    neighbor.setF(neighbor.getG() + neighbor.getH());  // Update F cost based on G and H costs
                     cameFrom.put(neighbor, curr);
 
                     if (!openSet.contains(neighbor)) {
                         openSet.add(neighbor);
                     }
                 }
+
             }
 
             repaint();
@@ -259,13 +307,16 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
                 Thread.sleep(100);
             }
 
-            Thread.sleep(300); // Adjust the delay as needed
+            Thread.sleep(0); // Adjust the delay as needed for animation
         }
+
+
+        System.out.println("No path");
     }
 
 
     public boolean inBounds(Node node) {
-        return node.getX() + size <= Toolkit.getDefaultToolkit().getScreenSize().width && node.getX() >= 0 && node.getY() + size <= Toolkit.getDefaultToolkit().getScreenSize().height && node.getY() >= 0;
+        return node.getX() + size <= getWidth() && node.getX() >= 0 && node.getY() + size <= getHeight() && node.getY() >= 0;
     }
 
     public boolean isAtDiagonal(Node node, Node curr) {
@@ -275,7 +326,7 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
         } else if (isInWall(new Node(node.getX() - size, node.getY())) && isInWall(new Node(node.getX(), node.getY() - size))) {
             closedSet.add(node);
             return true;
-        } else if (!(node.getX()>curr.getX()&&node.getY()>curr.getY())&&isInWall(new Node(node.getX() + size, node.getY())) && isInWall(new Node(node.getX(), node.getY() + size))) {
+        } else if (!(node.getX() > curr.getX() && node.getY() > curr.getY()) && isInWall(new Node(node.getX() + size, node.getY())) && isInWall(new Node(node.getX(), node.getY() + size))) {
             closedSet.add(node);
             return true;
         } else if (isInWall(new Node(node.getX() + size, node.getY())) && isInWall(new Node(node.getX(), node.getY() - size))) {
@@ -334,16 +385,18 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
     }
 
 
-    public void createWall(MouseEvent e) {
-        if (SwingUtilities.isLeftMouseButton(e) && currentKey != 's' && currentKey != 'e') {
-            int xBorder = e.getX() - (e.getX() % size);
-            int yBorder = e.getY() - (e.getY() % size);
+    private void createWall(MouseEvent e) {
+        int xBorder = e.getX() - (e.getX() % size);
+        int yBorder = e.getY() - (e.getY() % size);
+        Node newBorder = new Node(xBorder, yBorder);
 
-            Node newBorder = new Node(xBorder, yBorder);
+        if (SwingUtilities.isLeftMouseButton(e) && currentKey != START_NODE_KEY && currentKey != END_NODE_KEY) {
             wall.add(newBorder);
-
-            repaint();
+        } else if (SwingUtilities.isRightMouseButton(e)) {
+            wall.remove(newBorder);
         }
+
+        repaint();
     }
 
 
@@ -351,34 +404,52 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
     public void mouseClicked(MouseEvent e) {
         if (SwingUtilities.isLeftMouseButton(e)) {
             createWall(e);
-        }
 
 
-        if (currentKey == 's') {
+            if (currentKey == 's') {
 
-            int xRollover = e.getX() % size;
-            int yRollover = e.getY() % size;
+                int xRollover = e.getX() % size;
+                int yRollover = e.getY() % size;
 
-            if (startNode == null) {
-                startNode = new Node(e.getX() - xRollover, e.getY() - yRollover);
+                if (startNode == null) {
+                    startNode = new Node(e.getX() - xRollover, e.getY() - yRollover);
 
 
-            } else {
-                startNode.setXY(e.getX() - xRollover, e.getY() - yRollover);
+                } else {
+                    startNode.setXY(e.getX() - xRollover, e.getY() - yRollover);
+                }
+                repaint();
             }
-            repaint();
-        }
-        // If 'e' is pressed create end node
-        else if (currentKey == 'e') {
-            int xRollover = e.getX() % size;
-            int yRollover = e.getY() % size;
+            // If 'e' is pressed create end node
+            else if (currentKey == 'e') {
+                int xRollover = e.getX() % size;
+                int yRollover = e.getY() % size;
 
-            if (endNode == null) {
-                endNode = new Node(e.getX() - xRollover, e.getY() - yRollover);
-            } else {
-                endNode.setXY(e.getX() - xRollover, e.getY() - yRollover);
+                if (endNode == null) {
+                    endNode = new Node(e.getX() - xRollover, e.getY() - yRollover);
+                } else {
+                    endNode.setXY(e.getX() - xRollover, e.getY() - yRollover);
+                }
+                repaint();
             }
-            repaint();
+        } else if (SwingUtilities.isRightMouseButton(e)) {
+            int mouseBoxX = e.getX() - (e.getX() % size);
+            int mouseBoxY = e.getY() - (e.getY() % size);
+
+            // If 's' is pressed remove start node
+            if (currentKey == 's') {
+                if (startNode != null && mouseBoxX == startNode.getX() && startNode.getY() == mouseBoxY) {
+                    startNode = null;
+                    repaint();
+                }
+            }
+            // If 'e' is pressed remove end node
+            else if (currentKey == 'e') {
+                if (endNode != null && mouseBoxX == endNode.getX() && endNode.getY() == mouseBoxY) {
+                    endNode = null;
+                    repaint();
+                }
+            }
         }
 
 
@@ -406,9 +477,8 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
 
     @Override
     public void mouseDragged(MouseEvent e) {
-        if (SwingUtilities.isLeftMouseButton(e)) {
-            createWall(e);
-        }
+        createWall(e);
+
     }
 
     @Override
