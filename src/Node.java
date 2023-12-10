@@ -76,6 +76,12 @@ public class Node implements Comparable<Node> {
         this.y = y;
     }
 
+    public int distance(Node n) {
+        int dx = Math.abs(this.x - n.x);
+        int dy = Math.abs(this.y - n.y);
+        return (int) Math.sqrt(Math.pow(dx,2) + Math.pow(dy, 2));
+    }
+
     @Override
     public boolean equals(Object o) {
         // If the object is compared with itself then return true
