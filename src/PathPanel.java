@@ -308,8 +308,8 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
                 neighbor.setG(g);
 
                 // Compute h cost
-                int dx = Math.abs(neighbor.getX() - curr.getX());
-                int dy = Math.abs(neighbor.getY() - curr.getY());
+                int dx = Math.abs(neighbor.getX() - endNode.getX());
+                int dy = Math.abs(neighbor.getY() - endNode.getY());
                 int h = (dx + dy) + (2) * Math.min(dx, dy);
                 neighbor.setH(h);
 
