@@ -1,4 +1,5 @@
 import javax.swing.*;
+import javax.swing.Timer;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.List;
@@ -28,7 +29,11 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
     JButton stopContinue; // New button for stopping/continuing the process
     private boolean algorithmRunning = false;
     private boolean paused = false;
-
+    private JSlider slider;
+    private static final Color BARCOLOR =new Color(0,100,100,127);
+    private static final int SLIDERMAX = 100;
+    private static final int MESSAGETIME = 1000;
+    
     public PathPanel() {
         size = 32;
         addMouseListener(this);
@@ -39,10 +44,20 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
         start = new JButton("Start");
         reset = new JButton("Reset");
         stopContinue = new JButton("Stop");
+        slider = new JSlider(0,SLIDERMAX,SLIDERMAX);
+        slider.setPaintTrack(true);
+        slider.setPaintLabels(true);
+        slider.setMajorTickSpacing(SLIDERMAX/2);
+        Hashtable<Integer, JLabel> labelTable = new Hashtable<>();
+        labelTable.put(0, new JLabel(""));
+        labelTable.put(SLIDERMAX/2, new JLabel("SET SPEED"));
+        labelTable.put(SLIDERMAX, new JLabel(""));
+        slider.setLabelTable(labelTable);
 
         add(start);
         add(reset);
         add(stopContinue);
+        add(slider);
 
         stopContinue.addActionListener(e -> {
             togglePause(); // Toggle the paused state on button click
@@ -115,7 +130,15 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
         for (Node node : copyOfOpenSet) {
             drawNodeDetails(node, g);
         }
-
+        g.setColor(BARCOLOR);
+        g.fillRect(0,0,2000,50);
+        g.setColor(new Color(230,230,255));
+        g.fillRoundRect(6,4,165,44,10,10);
+        g.setColor(Color.black);
+        g.setFont(new Font("TimesRoman", Font.BOLD, 10));
+        g.drawString("set walls: click or drag",11,15);
+        g.drawString("set start node: hold s + click",11,30);
+        g.drawString("set end node: hold e + click",11,45);
     }
 
     private void drawGrid(Graphics g) {
@@ -255,6 +278,7 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
 
     public void pathFind() throws InterruptedException {
         if (endNode == null) {
+            showMessage("End node is not set.",MESSAGETIME);
             System.out.println("End node is not set.");
             return;
         }
@@ -266,6 +290,7 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
             closedSet.add(curr);
 
             if (curr.equals(endNode)) {
+                showMessage("Path found",MESSAGETIME);
                 System.out.println("Path found");
                 reconstructPath(); // Implement path reconstruction
                 return;
@@ -321,9 +346,9 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
                 Thread.sleep(100);
             }
 
-            Thread.sleep(0); // Adjust the delay as needed for animation
+            Thread.sleep(SLIDERMAX-slider.getValue()); // Adjust the delay as needed for animation
         }
-
+        showMessage("No path",MESSAGETIME);
         System.out.println("No path");
     }
 
@@ -514,6 +539,19 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
     @Override
     public void keyReleased(KeyEvent e) {
         currentKey = (char) 0;
+    }
+    private void showMessage(String message, int durationMs) {
+        JLabel a = new JLabel(message);
+        add(a);
+        revalidate();
+        Timer timer = new Timer(durationMs, (ActionEvent e) -> {
+            remove(a);
+            revalidate();
+            repaint();
+        });
+
+        timer.setRepeats(false);
+        timer.start();
     }
 
 }
