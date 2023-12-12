@@ -2,7 +2,7 @@
 
 ## Overview
 
-This Java application allows users to visualize and interact with a star pathfinding algorithm on a grid. The application enables users to create a start node, an end node, and draw walls on the grid to observe how the algorithm finds the shortest path between the start and end nodes.
+This Java application allows users to visualize and interact with a star pathfinding algorithm on a grid. The application enables users to create a start node, an end node, draw walls on the grid, and control the speed of the animation using a slider. This allows users to observe how the algorithm finds the shortest path between the start and end nodes with varying animation speeds.
 
 ## Features
 
@@ -13,6 +13,9 @@ This Java application allows users to visualize and interact with a star pathfin
 - **Draw Walls:**
   - Left-click and drag on the grid to draw walls.
   - Right-click on existing walls to remove them.
+
+- **Control Animation Speed:**
+  - Use the slider to control the speed of the pathfinding algorithm animation.
 
 ## Getting Started
 
@@ -26,3 +29,7 @@ This Java application allows users to visualize and interact with a star pathfin
 
    ```bash
    git clone https://github.com/your-username/java-star-pathfinding.git
+
+2. Open the file in a code editor e.g. Vs Code/Intellij Idea
+3. Run the application from the MainFrame.java class
+   
