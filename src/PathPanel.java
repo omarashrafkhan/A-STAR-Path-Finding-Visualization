@@ -7,16 +7,7 @@ import java.util.*;
 
 public class PathPanel extends JPanel implements MouseListener, MouseMotionListener, KeyListener {
 
-    private static final char START_NODE_KEY = 's';
-    private static final char END_NODE_KEY = 'e';
-    private static final Color GRID_COLOR = Color.lightGray;
-    private static final Color WALL_COLOR = Color.black;
-    private static final Color OPEN_SET_COLOR = Color.green;
-    private static final Color CLOSED_SET_COLOR = Color.yellow;
-    private static final Color PATH_COLOR = Color.cyan;
-    private static final Color END_NODE_COLOR = Color.red;
-    private static final Color START_NODE_COLOR = Color.blue;
-    private static final Color COST_COLOR = Color.black;
+
     private final PriorityQueue<Node> openSet;
     private final Set<Node> closedSet;
     private final Map<Node, Node> cameFrom;
@@ -30,9 +21,7 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
     private boolean algorithmRunning = false;
     private boolean paused = false;
     private JSlider slider;
-    private static final Color BARCOLOR =new Color(0,100,100,127);
-    private static final int SLIDERMAX = 100;
-    private static final int MESSAGETIME = 1000;
+
     
     public PathPanel() {
         size = 32;
@@ -44,14 +33,14 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
         start = new JButton("Start");
         reset = new JButton("Reset");
         stopContinue = new JButton("Stop");
-        slider = new JSlider(0,SLIDERMAX,SLIDERMAX);
+        slider = new JSlider(0, styleSheet.SLIDERMAX,styleSheet.SLIDERMAX);
         slider.setPaintTrack(true);
         slider.setPaintLabels(true);
-        slider.setMajorTickSpacing(SLIDERMAX/2);
+        slider.setMajorTickSpacing(styleSheet.SLIDERMAX/2);
         Hashtable<Integer, JLabel> labelTable = new Hashtable<>();
         labelTable.put(0, new JLabel(""));
-        labelTable.put(SLIDERMAX/2, new JLabel("SET SPEED"));
-        labelTable.put(SLIDERMAX, new JLabel(""));
+        labelTable.put(styleSheet.SLIDERMAX/2, new JLabel("SET SPEED"));
+        labelTable.put(styleSheet.SLIDERMAX, new JLabel(""));
         slider.setLabelTable(labelTable);
 
         add(start);
@@ -118,19 +107,28 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
         // wall being drawn
         drawWalls(g);
 
+
+        try{
         drawNodes(g);
 
-        Set<Node> copyOfOpenSet = new HashSet<>(openSet);
 
-        for (Node node : copyOfOpenSet) {
-            drawNodeDetails(node, g); // Assuming you have a Graphics object
-        }
 
-        copyOfOpenSet = new HashSet<>(closedSet);
-        for (Node node : copyOfOpenSet) {
+        for (Node node : openSet) {
             drawNodeDetails(node, g);
         }
-        g.setColor(BARCOLOR);
+
+
+        for (Node node : closedSet) {
+            drawNodeDetails(node, g);
+        }
+
+        }catch (Exception e){
+
+        }
+
+
+
+        g.setColor(styleSheet.BARCOLOR);
         g.fillRect(0,0,2000,50);
         g.setColor(new Color(230,230,255));
         g.fillRoundRect(6,4,165,44,10,10);
@@ -142,7 +140,7 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
     }
 
     private void drawGrid(Graphics g) {
-        g.setColor(GRID_COLOR);
+        g.setColor(styleSheet.GRID_COLOR);
         for (int j = 0; j < this.getHeight(); j += size) {
             for (int i = 0; i < this.getWidth(); i += size) {
                 g.drawRect(i, j, size, size);
@@ -151,7 +149,7 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
     }
 
     private void drawWalls(Graphics g) {
-        g.setColor(WALL_COLOR);
+        g.setColor(styleSheet.WALL_COLOR);
         for (Node value : wall) {
             g.fillRect(value.getX() + 1, value.getY() + 1, size - 1, size - 1);
         }
@@ -168,14 +166,14 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
     }
 
     private void drawOpenSet(Graphics g) {
-        g.setColor(OPEN_SET_COLOR);
+        g.setColor(styleSheet.OPEN_SET_COLOR);
         for (Node node : openSet) {
             g.fillRect(node.getX() + 1, node.getY() + 1, size - 1, size - 1);
         }
     }
 
     private void drawClosedSet(Graphics g) {
-        g.setColor(CLOSED_SET_COLOR);
+        g.setColor(styleSheet.CLOSED_SET_COLOR);
         for (Node node : closedSet) {
             g.fillRect(node.getX() + 1, node.getY() + 1, size - 1, size - 1);
         }
@@ -183,7 +181,7 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
 
     private void drawShortestPath(Graphics g) {
         if (shortestPath != null) {
-            g.setColor(PATH_COLOR);
+            g.setColor(styleSheet.PATH_COLOR);
             for (Node node : shortestPath) {
                 g.fillOval(node.getX() + 1, node.getY() + 1, size - 1, size - 1);
             }
@@ -192,20 +190,20 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
 
     private void drawEndNode(Graphics g) {
         if (endNode != null) {
-            g.setColor(END_NODE_COLOR);
+            g.setColor(styleSheet.END_NODE_COLOR);
             g.fillRect(endNode.getX() + 1, endNode.getY() + 1, size - 1, size - 1);
         }
     }
 
     private void drawStartNode(Graphics g) {
         if (startNode != null) {
-            g.setColor(START_NODE_COLOR);
+            g.setColor(styleSheet.START_NODE_COLOR);
             g.fillRect(startNode.getX() + 1, startNode.getY() + 1, size - 1, size - 1);
         }
     }
 
     private void drawNodeDetails(Node node, Graphics g) {
-        g.setColor(COST_COLOR);
+        g.setColor(styleSheet.COST_COLOR);
         g.setFont(new Font("TimesRoman", Font.BOLD, 10));
         g.drawString(String.valueOf(node.getF()), node.getX() + 10, node.getY() + 25);
     }
@@ -230,8 +228,6 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
 
             @Override
             protected void done() {
-                // algorithmRunning = false;
-                // start.setText("Reset");
                 updateGUI();
             }
         };
@@ -257,12 +253,7 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
         return (int) Point.distance(a.getX(), a.getY(), b.getX(), b.getY());
     }
 
-    /**
-     * Method to return a node in a given priority queue if it exists.
-     * @param n the Node object
-     * @param nodes Priority Queue
-     * @return Node object if found else null
-     */
+
     public Node getNodeFromOpenSet(Node n, PriorityQueue<Node> nodes) {
         if (nodes.contains(n)) {
             PriorityQueue<Node> copy = new PriorityQueue<>(nodes);
@@ -278,7 +269,7 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
 
     public void pathFind() throws InterruptedException {
         if (endNode == null) {
-            showMessage("End node is not set.",MESSAGETIME);
+            showMessage("End node is not set.",styleSheet.MESSAGETIME);
             System.out.println("End node is not set.");
             return;
         }
@@ -290,7 +281,7 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
             closedSet.add(curr);
 
             if (curr.equals(endNode)) {
-                showMessage("Path found",MESSAGETIME);
+                showMessage("Path found",styleSheet.MESSAGETIME);
                 System.out.println("Path found");
                 reconstructPath(); // Implement path reconstruction
                 return;
@@ -346,9 +337,9 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
                 Thread.sleep(100);
             }
 
-            Thread.sleep(SLIDERMAX-slider.getValue()); // Adjust the delay as needed for animation
+            Thread.sleep(styleSheet.SLIDERMAX-slider.getValue()); // Adjust the delay as needed for animation
         }
-        showMessage("No path",MESSAGETIME);
+        showMessage("No path",styleSheet.MESSAGETIME);
         System.out.println("No path");
     }
 
@@ -411,27 +402,12 @@ public class PathPanel extends JPanel implements MouseListener, MouseMotionListe
 
         return neighbors;
     }
-
-    public Node getNode(int x, int y) {
-        for (Node node : openSet) {
-            if (node.getX() == x && node.getY() == y) {
-                return node;
-            }
-        }
-        for (Node node : closedSet) {
-            if (node.getX() == x && node.getY() == y) {
-                return node;
-            }
-        }
-        return new Node(x, y);
-    }
-
     private void createWall(MouseEvent e) {
         int xBorder = e.getX() - (e.getX() % size);
         int yBorder = e.getY() - (e.getY() % size);
         Node newBorder = new Node(xBorder, yBorder);
 
-        if (SwingUtilities.isLeftMouseButton(e) && currentKey != START_NODE_KEY && currentKey != END_NODE_KEY) {
+        if (SwingUtilities.isLeftMouseButton(e) && currentKey != styleSheet.START_NODE_KEY && currentKey != styleSheet.END_NODE_KEY) {
             wall.add(newBorder);
         } else if (SwingUtilities.isRightMouseButton(e)) {
             wall.remove(newBorder);
